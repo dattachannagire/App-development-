@@ -1,0 +1,129 @@
+import { useState, useEffect } from "react";
+
+export default function TodoApp() {
+  const [tasks, setTasks] = useState([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [editingId, setEditingId] = useState(null);
+
+  // Load tasks from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("tasks");
+    if (stored) setTasks(JSON.parse(stored));
+  }, []);
+
+  // Save tasks to localStorage
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  const handleAddOrEdit = () => {
+    if (!title.trim()) return;
+
+    if (editingId) {
+      setTasks(tasks.map(t => t.id === editingId ? { ...t, title, description } : t));
+      setEditingId(null);
+    } else {
+      setTasks([
+        ...tasks,
+        {
+          id: Date.now(),
+          title,
+          description,
+          completed: false,
+          dueDate: null,
+          priority: "Normal",
+        }
+      ]);
+    }
+
+    setTitle("");
+    setDescription("");
+  };
+
+  const toggleComplete = (id) => {
+    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  };
+
+  const deleteTask = (id) => {
+    setTasks(tasks.filter(t => t.id !== id));
+  };
+
+  const startEdit = (task) => {
+    setEditingId(task.id);
+    setTitle(task.title);
+    setDescription(task.description);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-6 flex justify-center">
+      <div className="w-full max-w-lg bg-white p-6 rounded-2xl shadow-xl">
+        <h1 className="text-2xl font-bold mb-4 text-center">Simple To-Do List App</h1>
+
+        {/* Input Fields */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Task title"
+            className="w-full p-2 border rounded mb-2"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <textarea
+            placeholder="Task description (optional)"
+            className="w-full p-2 border rounded mb-2"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+
+          <button
+            onClick={handleAddOrEdit}
+            className="w-full bg-blue-600 text-white p-2 rounded mt-2"
+          >
+            {editingId ? "Update Task" : "Add Task"}
+          </button>
+        </div>
+
+        {/* Task List */}
+        <ul className="space-y-3">
+          {tasks.map(task => (
+            <li
+              key={task.id}
+              className="p-4 bg-gray-50 rounded-xl shadow flex justify-between items-start"
+            >
+              <div>
+                <h2 className={`font-semibold ${task.completed ? "line-through text-gray-500" : ""}`}>
+                  {task.title}
+                </h2>
+                {task.description && (
+                  <p className="text-gray-600 text-sm">{task.description}</p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2 ml-2">
+                <button
+                  onClick={() => toggleComplete(task.id)}
+                  className="text-xs bg-green-500 text-white px-2 py-1 rounded"
+                >
+                  {task.completed ? "Undo" : "Done"}
+                </button>
+                <button
+                  onClick={() => startEdit(task)}
+                  className="text-xs bg-yellow-500 text-white px-2 py-1 rounded"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  className="text-xs bg-red-600 text-white px-2 py-1 rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
